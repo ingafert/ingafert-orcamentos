@@ -1,0 +1,1 @@
+Nota: adicione os ícones reais (192x192 e 512x512, logo Ingafert) em public/icons/

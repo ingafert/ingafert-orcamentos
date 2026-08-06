@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ingafert-verde: #2e5e3e;
+  --ingafert-ouro: #d4af37;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-gray-800 antialiased;
+}
+
+.dark body {
+  @apply bg-gray-950 text-gray-100;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-ingafert-verde px-5 py-3
+    text-sm font-semibold text-white shadow-card transition-all hover:bg-ingafert-verde-escuro
+    hover:shadow-card-hover active:scale-[0.98];
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ingafert-verde/20 bg-white
+    px-5 py-3 text-sm font-semibold text-ingafert-verde transition-all hover:bg-ingafert-verde/5;
+}
+
+.btn-gold {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-ingafert-ouro px-5 py-3
+    text-sm font-semibold text-ingafert-verde-escuro shadow-card transition-all hover:bg-ingafert-ouro-claro;
+}
+
+.card {
+  @apply rounded-2xl border border-gray-100 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover;
+}
+
+.input {
+  @apply w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none
+    transition-all focus:border-ingafert-verde focus:ring-2 focus:ring-ingafert-verde/20;
+}
+
+.label {
+  @apply mb-1.5 block text-xs font-medium text-gray-500;
+}
