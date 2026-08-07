@@ -89,7 +89,7 @@ export default function NovoOrcamentoPage() {
   const descontoValorGeral = ((subtotal - descontoItens) * descontoGeral) / 100;
   const total = subtotal - descontoItens - descontoValorGeral + frete;
 
-  async function salvarOrcamento(): Promise<{ numero: number; itensCompletos: OrcamentoItem[] } | null> {
+  async function salvarOrcamento(): Promise<{ orcamentoId: string; numero: number; itensCompletos: OrcamentoItem[] } | null> {
     if (!clienteSelecionado || itens.length === 0) return null;
     setSalvando(true);
 
@@ -137,7 +137,7 @@ export default function NovoOrcamentoPage() {
       produto: itens[idx].produto,
     }));
 
-    return { numero: orcamento.numero, itensCompletos };
+    return { orcamentoId: orcamento.id, numero: orcamento.numero, itensCompletos };
   }
 
   async function handleGerarPdf() {
@@ -166,10 +166,11 @@ export default function NovoOrcamentoPage() {
     if (!resultado || !clienteSelecionado) return;
 
     const numero = clienteSelecionado.whatsapp?.replace(/\D/g, "");
+    const linkAprovacao = `${window.location.origin}/orcamento/${resultado.orcamentoId}`;
     const mensagem = encodeURIComponent(
       `Olá ${clienteSelecionado.nome}, segue o orçamento nº ${resultado.numero} da Ingafert Peças Agrícolas.\n` +
-        `Total: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}\n` +
-        `Em breve enviaremos o PDF completo. Qualquer dúvida estamos à disposição!`
+        `Total: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}\n\n` +
+        `Veja os itens e aprove online: ${linkAprovacao}`
     );
     const url = numero ? `https://wa.me/55${numero}?text=${mensagem}` : `https://wa.me/?text=${mensagem}`;
     window.open(url, "_blank");

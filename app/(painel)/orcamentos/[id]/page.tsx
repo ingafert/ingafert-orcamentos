@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { gerarOrcamentoPdf } from "@/lib/pdf/gerarOrcamentoPdf";
 import type { Cliente, OrcamentoItem, ConfiguracaoEmpresa } from "@/types/database";
-import { FileDown, MessageCircle, PackageCheck, ArrowLeft } from "lucide-react";
+import { FileDown, MessageCircle, PackageCheck, ArrowLeft, Link as LinkIcon } from "lucide-react";
 import { SkeletonDetail } from "@/components/Skeleton";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -74,13 +74,22 @@ export default function DetalheOrcamentoPage() {
   function handleEnviarWhatsapp() {
     if (!orcamento || !cliente) return;
     const numero = cliente.whatsapp?.replace(/\D/g, "");
+    const linkAprovacao = `${window.location.origin}/orcamento/${orcamento.id}`;
     const mensagem = encodeURIComponent(
       `Olá ${cliente.nome}, segue o orçamento nº ${orcamento.numero} da Ingafert Peças Agrícolas.\n` +
-        `Total: ${Number(orcamento.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+        `Total: ${Number(orcamento.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}\n\n` +
+        `Veja os itens e aprove online: ${linkAprovacao}`
     );
     const url = numero ? `https://wa.me/55${numero}?text=${mensagem}` : `https://wa.me/?text=${mensagem}`;
     window.open(url, "_blank");
     toast.success("Abrindo WhatsApp...");
+  }
+
+  function handleCopiarLink() {
+    if (!orcamento) return;
+    const link = `${window.location.origin}/orcamento/${orcamento.id}`;
+    navigator.clipboard.writeText(link);
+    toast.success("Link de aprovação copiado!");
   }
 
   async function handleConverterEmPedido() {
@@ -161,6 +170,9 @@ export default function DetalheOrcamentoPage() {
           </button>
           <button onClick={handleEnviarWhatsapp} className="btn-secondary">
             <MessageCircle className="h-4 w-4" /> WhatsApp
+          </button>
+          <button onClick={handleCopiarLink} className="btn-secondary">
+            <LinkIcon className="h-4 w-4" /> Copiar link
           </button>
           {orcamento.status !== "convertido" && (
             <button onClick={handleConverterEmPedido} disabled={convertendo} className="btn-primary">

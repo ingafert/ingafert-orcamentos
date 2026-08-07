@@ -27,8 +27,9 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isLoginPage = request.nextUrl.pathname.startsWith("/login");
+  const isPaginaPublica = isLoginPage || request.nextUrl.pathname.startsWith("/orcamento/");
 
-  if (!user && !isLoginPage) {
+  if (!user && !isPaginaPublica) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
