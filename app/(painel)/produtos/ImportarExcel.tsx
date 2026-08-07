@@ -11,11 +11,11 @@ import { Upload, X, CheckCircle2, AlertCircle } from "lucide-react";
 // A normalização remove acentos/maiúsculas antes de comparar, então
 // "Código Ingafert", "codigo_ingafert" e "CÓDIGO INGAFERT" são equivalentes.
 const CAMPOS: { campo: string; aliases: string[] }[] = [
-  { campo: "codigo_ingafert", aliases: ["codigo ingafert", "codigo_ingafert", "codigo produto", "codigo_produto", "id"] },
+  { campo: "codigo_ingafert", aliases: ["codigo ingafert", "codigo_ingafert", "codigo produto", "codigo_produto", "id produto", "id_produto", "id"] },
   { campo: "codigo_industria", aliases: ["codigo da industria", "codigo_industria", "codigo fabricante"] },
   { campo: "codigo_erp", aliases: ["codigo erp", "codigo_erp"] },
   { campo: "sku", aliases: ["sku"] },
-  { campo: "nome", aliases: ["nome", "nome do produto", "nome_do_produto", "titulo"] },
+  { campo: "nome", aliases: ["nome", "nome do produto", "nome_do_produto", "nome_produto", "titulo"] },
   { campo: "descricao", aliases: ["descricao", "descricao_do_produto"] },
   { campo: "marca_peca_nome", aliases: ["marca da peca", "marca_da_peca", "marca"] },
   { campo: "marca_maquina_nome", aliases: ["marca da maquina", "marca_da_maquina"] },
@@ -26,7 +26,7 @@ const CAMPOS: { campo: string; aliases: string[] }[] = [
   { campo: "preco_venda", aliases: ["preco de venda", "preco_venda", "preco"] },
   { campo: "peso", aliases: ["peso", "peso_em_kg", "peso em kg"] },
   { campo: "ncm", aliases: ["ncm"] },
-  { campo: "estoque", aliases: ["estoque", "quantidade", "estoque_disponivel"] },
+  { campo: "estoque", aliases: ["estoque", "quantidade", "estoque_disponivel", "total_em_estoque"] },
   { campo: "imagem_url", aliases: ["imagem", "imagem_url", "foto", "url_da_imagem", "link_foto_principal"] },
   { campo: "seo_url", aliases: ["url", "link", "url_amigavel", "slug"] },
   { campo: "meta_title", aliases: ["meta title", "meta_title", "seo_titulo_pagina"] },
