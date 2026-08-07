@@ -1,4 +1,3 @@
-cat > "app/(painel)/produtos/ImportarExcel.tsx" << 'PARTEFINAL'
 "use client";
 
 import { useRef, useState } from "react";
