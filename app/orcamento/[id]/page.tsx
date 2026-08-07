@@ -97,7 +97,7 @@ export default async function OrcamentoPublicoPage({ params }: { params: { id: s
           >
             {orcamento.status === "aprovado" && "✅ Você já aprovou este orçamento. Em breve entraremos em contato."}
             {orcamento.status === "recusado" && "❌ Você recusou este orçamento."}
-            {orcamento.status === "convertido" && "✅ Este orçamento já foi convertido em pedido."}
+            {orcamento.status === "convertido" && "✅ Orçamento aprovado! Seu pedido já está sendo preparado."}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
