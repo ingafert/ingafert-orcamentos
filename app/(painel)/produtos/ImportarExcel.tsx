@@ -1,3 +1,4 @@
+cat > "app/(painel)/produtos/ImportarExcel.tsx" << 'PARTEFINAL'
 "use client";
 
 import { useRef, useState } from "react";
@@ -5,32 +6,44 @@ import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/client";
 import { Upload, X, CheckCircle2, AlertCircle } from "lucide-react";
 
-// Mapeia o cabeçalho da planilha Ingafert -> colunas da tabela produtos.
-// Ajuste os nomes à esquerda se o cabeçalho real da planilha for diferente.
-const MAPA_COLUNAS: Record<string, string> = {
-  "Código Ingafert": "codigo_ingafert",
-  "Código da Indústria": "codigo_industria",
-  "Código ERP": "codigo_erp",
-  SKU: "sku",
-  Nome: "nome",
-  Descrição: "descricao",
-  "Marca da Peça": "marca_peca_nome",
-  "Marca da Máquina": "marca_maquina_nome",
-  Modelo: "modelo",
-  Categoria: "categoria_nome",
-  Subcategoria: "subcategoria_nome",
-  "Preço de Custo": "preco_custo",
-  "Preço de Venda": "preco_venda",
-  Peso: "peso",
-  NCM: "ncm",
-  Estoque: "estoque",
-  Imagem: "imagem_url",
-  "URL": "seo_url",
-  "Meta Title": "meta_title",
-  "Meta Description": "meta_description",
-  "Palavras-chave": "palavras_chave",
-  "Alt da Imagem": "alt_imagem",
-};
+// Cada campo do banco aceita vários "apelidos" de cabeçalho de planilha,
+// para reconhecer tanto o modelo próprio da Ingafert quanto planilhas
+// exportadas de outras plataformas (ex: Yampi, Mercado Livre, etc).
+// A normalização remove acentos/maiúsculas antes de comparar, então
+// "Código Ingafert", "codigo_ingafert" e "CÓDIGO INGAFERT" são equivalentes.
+const CAMPOS: { campo: string; aliases: string[] }[] = [
+  { campo: "codigo_ingafert", aliases: ["codigo ingafert", "codigo_ingafert", "codigo produto", "codigo_produto", "id"] },
+  { campo: "codigo_industria", aliases: ["codigo da industria", "codigo_industria", "codigo fabricante"] },
+  { campo: "codigo_erp", aliases: ["codigo erp", "codigo_erp"] },
+  { campo: "sku", aliases: ["sku"] },
+  { campo: "nome", aliases: ["nome", "nome do produto", "nome_do_produto", "titulo"] },
+  { campo: "descricao", aliases: ["descricao", "descricao_do_produto"] },
+  { campo: "marca_peca_nome", aliases: ["marca da peca", "marca_da_peca", "marca"] },
+  { campo: "marca_maquina_nome", aliases: ["marca da maquina", "marca_da_maquina"] },
+  { campo: "modelo", aliases: ["modelo"] },
+  { campo: "categoria_nome", aliases: ["categoria", "categorias"] },
+  { campo: "subcategoria_nome", aliases: ["subcategoria"] },
+  { campo: "preco_custo", aliases: ["preco de custo", "preco_custo"] },
+  { campo: "preco_venda", aliases: ["preco de venda", "preco_venda", "preco"] },
+  { campo: "peso", aliases: ["peso", "peso_em_kg", "peso em kg"] },
+  { campo: "ncm", aliases: ["ncm"] },
+  { campo: "estoque", aliases: ["estoque", "quantidade", "estoque_disponivel"] },
+  { campo: "imagem_url", aliases: ["imagem", "imagem_url", "foto", "url_da_imagem", "link_foto_principal"] },
+  { campo: "seo_url", aliases: ["url", "link", "url_amigavel", "slug"] },
+  { campo: "meta_title", aliases: ["meta title", "meta_title", "seo_titulo_pagina"] },
+  { campo: "meta_description", aliases: ["meta description", "meta_description", "seo_descricao"] },
+  { campo: "palavras_chave", aliases: ["palavras-chave", "palavras chave", "palavras_chave", "tags", "seo_palavras_chave"] },
+  { campo: "alt_imagem", aliases: ["alt da imagem", "alt_da_imagem", "alt_imagem"] },
+];
+
+function normalizar(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove acentos
+    .toLowerCase()
+    .replace(/[_-]/g, " ")
+    .trim();
+}
 
 interface Relatorio {
   total: number;
@@ -89,6 +102,44 @@ export default function ImportarExcel({ onConcluido }: { onConcluido: () => void
     return criado?.id ?? null;
   }
 
+  // Constrói um registro para o banco a partir de uma linha da planilha,
+  // não importa qual o cabeçalho original usado (Ingafert, Yampi, etc).
+  function mapearLinha(linha: Record<string, any>): Record<string, any> {
+    const linhaNormalizada: Record<string, any> = {};
+    for (const [cabecalho, valor] of Object.entries(linha)) {
+      linhaNormalizada[normalizar(cabecalho)] = valor;
+    }
+
+    const registro: Record<string, any> = {};
+    for (const { campo, aliases } of CAMPOS) {
+      for (const alias of aliases) {
+        const valor = linhaNormalizada[normalizar(alias)];
+        if (valor !== undefined && valor !== "") {
+          registro[campo] = valor;
+          break;
+        }
+      }
+    }
+
+    // A Yampi exporta várias categorias separadas por ";" numa única célula
+    // (ex: "Colheitadeiras;NEW HOLLAND;NEW HOLLAND > COLHEITADEIRA").
+    // Usamos apenas a primeira como categoria principal do produto.
+    if (typeof registro.categoria_nome === "string" && registro.categoria_nome.includes(";")) {
+      registro.categoria_nome = registro.categoria_nome.split(";")[0].trim();
+    }
+
+    // A descrição da Yampi vem em HTML (<p>, <ul>, <strong>...). Removemos as
+    // tags pra guardar só o texto — pode reformatar depois se quiser manter HTML.
+    if (typeof registro.descricao === "string") {
+      registro.descricao = registro.descricao
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    return registro;
+  }
+
   async function processarArquivo(file: File) {
     setProcessando(true);
     setRelatorio(null);
@@ -105,16 +156,17 @@ export default function ImportarExcel({ onConcluido }: { onConcluido: () => void
 
     for (const [index, linha] of linhas.entries()) {
       try {
-        const registro: Record<string, any> = {};
-        for (const [colunaPlanilha, campoBanco] of Object.entries(MAPA_COLUNAS)) {
-          if (linha[colunaPlanilha] !== undefined && linha[colunaPlanilha] !== "") {
-            registro[campoBanco] = linha[colunaPlanilha];
-          }
+        const registro = mapearLinha(linha);
+
+        // Se a planilha não tem "Código Ingafert" (ex: planilhas de outras
+        // plataformas), usa o SKU como identificador único de fallback.
+        if (!registro.codigo_ingafert && registro.sku) {
+          registro.codigo_ingafert = String(registro.sku);
         }
 
         if (!registro.codigo_ingafert || !registro.nome) {
           rel.ignorados++;
-          rel.erros.push(`Linha ${index + 2}: código Ingafert ou nome ausente.`);
+          rel.erros.push(`Linha ${index + 2}: código (ou SKU) e nome são obrigatórios.`);
           continue;
         }
 
@@ -127,9 +179,9 @@ export default function ImportarExcel({ onConcluido }: { onConcluido: () => void
         delete registro.categoria_nome;
         delete registro.subcategoria_nome;
 
-        registro.preco_custo = Number(registro.preco_custo) || 0;
-        registro.preco_venda = Number(registro.preco_venda) || 0;
-        registro.peso = Number(registro.peso) || 0;
+        registro.preco_custo = Number(String(registro.preco_custo ?? "0").replace(",", ".")) || 0;
+        registro.preco_venda = Number(String(registro.preco_venda ?? "0").replace(",", ".")) || 0;
+        registro.peso = Number(String(registro.peso ?? "0").replace(",", ".")) || 0;
         registro.estoque = Number(registro.estoque) || 0;
 
         const { data: existente } = await supabase
@@ -173,8 +225,14 @@ export default function ImportarExcel({ onConcluido }: { onConcluido: () => void
             </div>
 
             <p className="mb-4 text-sm text-gray-500">
-              Selecione a planilha .xlsx da Ingafert. Produtos existentes (mesmo Código Ingafert) serão
-              atualizados; novos códigos serão cadastrados.
+              Aceita o modelo de planilha da Ingafert ou planilhas exportadas de outras plataformas (Yampi,
+              Mercado Livre, etc) — o sistema reconhece os cabeçalhos automaticamente. Produtos com o mesmo
+              código serão atualizados; novos códigos serão cadastrados.
+              <br />
+              <br />
+              <strong>Vindo da Yampi:</strong> a exportação de &quot;Produtos&quot; traz nome, descrição, marca e SEO,
+              mas não preço/estoque. Depois de importar essa, exporte também o modelo &quot;SKUs&quot; e importe-o
+              aqui em seguida — ele será mesclado automaticamente aos mesmos produtos (preço, estoque, peso).
             </p>
 
             <input
