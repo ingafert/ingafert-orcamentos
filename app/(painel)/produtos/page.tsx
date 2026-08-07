@@ -8,6 +8,7 @@ import ImportarExcel from "./ImportarExcel";
 import ExportarMfRural from "./ExportarMfRural";
 import NovoProdutoForm from "./NovoProdutoForm";
 import { SkeletonCards } from "@/components/Skeleton";
+import { toast } from "sonner";
 
 type TipoBusca = "geral" | "codigo_ingafert" | "codigo_industria" | "nome";
 
@@ -38,7 +39,14 @@ export default function ProdutosPage() {
       }
     }
 
-    const { data } = await query.order("nome");
+    const { data, error } = await query.order("nome");
+    if (error) {
+      console.error("Erro na busca de produtos:", error);
+      toast.error("Erro na busca: " + error.message);
+      setProdutos([]);
+      setCarregando(false);
+      return;
+    }
     setProdutos((data as Produto[]) ?? []);
     setCarregando(false);
   }, [busca, tipoBusca]);
