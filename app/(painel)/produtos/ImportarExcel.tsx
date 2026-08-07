@@ -25,6 +25,9 @@ const CAMPOS: { campo: string; aliases: string[] }[] = [
   { campo: "preco_custo", aliases: ["preco de custo", "preco_custo"] },
   { campo: "preco_venda", aliases: ["preco de venda", "preco_venda", "preco"] },
   { campo: "peso", aliases: ["peso", "peso_em_kg", "peso em kg"] },
+  { campo: "altura", aliases: ["altura", "altura_em_cm", "altura em cm"] },
+  { campo: "largura", aliases: ["largura", "largura_em_cm", "largura em cm"] },
+  { campo: "comprimento", aliases: ["comprimento", "comprimento_em_cm", "comprimento em cm"] },
   { campo: "ncm", aliases: ["ncm"] },
   { campo: "estoque", aliases: ["estoque", "quantidade", "estoque_disponivel", "total_em_estoque"] },
   { campo: "imagem_url", aliases: ["imagem", "imagem_url", "foto", "url_da_imagem", "link_foto_principal"] },
@@ -181,6 +184,9 @@ export default function ImportarExcel({ onConcluido }: { onConcluido: () => void
         registro.preco_custo = Number(String(registro.preco_custo ?? "0").replace(",", ".")) || 0;
         registro.preco_venda = Number(String(registro.preco_venda ?? "0").replace(",", ".")) || 0;
         registro.peso = Number(String(registro.peso ?? "0").replace(",", ".")) || 0;
+        registro.altura = Number(String(registro.altura ?? "0").replace(",", ".")) || 0;
+        registro.largura = Number(String(registro.largura ?? "0").replace(",", ".")) || 0;
+        registro.comprimento = Number(String(registro.comprimento ?? "0").replace(",", ".")) || 0;
         registro.estoque = Number(registro.estoque) || 0;
 
         const { data: existente } = await supabase

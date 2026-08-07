@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Produto } from "@/types/database";
-import { Search, Plus, ImageOff } from "lucide-react";
+import { Search, ImageOff } from "lucide-react";
 import ImportarExcel from "./ImportarExcel";
+import ExportarMfRural from "./ExportarMfRural";
+import NovoProdutoForm from "./NovoProdutoForm";
 import { SkeletonCards } from "@/components/Skeleton";
 
 type TipoBusca = "geral" | "codigo_ingafert" | "codigo_industria" | "nome";
@@ -50,11 +52,10 @@ export default function ProdutosPage() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-ingafert-verde-escuro">Produtos</h1>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <ImportarExcel onConcluido={buscar} />
-          <button className="btn-primary">
-            <Plus className="h-4 w-4" /> Novo produto
-          </button>
+          <ExportarMfRural />
+          <NovoProdutoForm onConcluido={buscar} />
         </div>
       </div>
 
