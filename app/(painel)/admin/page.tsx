@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { ConfiguracaoEmpresa } from "@/types/database";
-import { Building2, CheckCircle2 } from "lucide-react";
+import { Building2 } from "lucide-react";
+import { toast } from "sonner";
 
 const VAZIO: Omit<ConfiguracaoEmpresa, "id" | "updated_at"> = {
   nome: "Ingafert Peças Agrícolas",
@@ -23,7 +24,6 @@ export default function AdminPage() {
   const [form, setForm] = useState(VAZIO);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [salvo, setSalvo] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -36,11 +36,13 @@ export default function AdminPage() {
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
     setSalvando(true);
-    setSalvo(false);
-    await supabase.from("configuracoes_empresa").upsert({ id: true, ...form });
+    const { error } = await supabase.from("configuracoes_empresa").upsert({ id: true, ...form });
     setSalvando(false);
-    setSalvo(true);
-    setTimeout(() => setSalvo(false), 3000);
+    if (error) {
+      toast.error("Erro ao salvar: " + error.message);
+      return;
+    }
+    toast.success("Configurações da empresa salvas!");
   }
 
   if (carregando) return <p className="text-gray-400">Carregando...</p>;
@@ -152,11 +154,6 @@ export default function AdminPage() {
             <button type="submit" disabled={salvando} className="btn-primary">
               {salvando ? "Salvando..." : "Salvar configurações"}
             </button>
-            {salvo && (
-              <span className="flex items-center gap-1 text-sm font-medium text-ingafert-verde">
-                <CheckCircle2 className="h-4 w-4" /> Salvo!
-              </span>
-            )}
           </div>
         </form>
       </div>

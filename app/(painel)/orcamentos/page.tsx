@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Plus } from "lucide-react";
+import { Plus, Eye } from "lucide-react";
 
 const STATUS_CORES: Record<string, string> = {
   aberto: "bg-gray-100 text-gray-600",
@@ -37,6 +37,7 @@ export default async function OrcamentosPage() {
               <th className="px-5 py-3">Data</th>
               <th className="px-5 py-3">Status</th>
               <th className="px-5 py-3 text-right">Total</th>
+              <th className="px-5 py-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -52,6 +53,11 @@ export default async function OrcamentosPage() {
                 </td>
                 <td className="px-5 py-3 text-right font-medium">
                   {Number(o.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </td>
+                <td className="px-5 py-3 text-right">
+                  <Link href={`/orcamentos/${o.id}`} className="inline-flex text-gray-400 hover:text-ingafert-verde">
+                    <Eye className="h-4 w-4" />
+                  </Link>
                 </td>
               </tr>
             ))}

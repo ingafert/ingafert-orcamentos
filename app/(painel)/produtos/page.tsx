@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Produto } from "@/types/database";
 import { Search, Plus, ImageOff } from "lucide-react";
 import ImportarExcel from "./ImportarExcel";
+import { SkeletonCards } from "@/components/Skeleton";
 
 type TipoBusca = "geral" | "codigo_ingafert" | "codigo_industria" | "nome";
 
@@ -80,7 +81,7 @@ export default function ProdutosPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {carregando && <p className="col-span-full text-center text-gray-400">Carregando...</p>}
+        {carregando && <SkeletonCards count={8} />}
         {!carregando && produtos.length === 0 && (
           <p className="col-span-full text-center text-gray-400">Nenhum produto encontrado.</p>
         )}

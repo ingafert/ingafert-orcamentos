@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Cliente, Produto, OrcamentoItem, ConfiguracaoEmpresa } from "@/types/database";
 import { gerarOrcamentoPdf } from "@/lib/pdf/gerarOrcamentoPdf";
 import { Search, Plus, Trash2, FileDown, MessageCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface ItemCarrinho {
   produto: Produto;
@@ -109,7 +110,7 @@ export default function NovoOrcamentoPage() {
 
     if (error || !orcamento) {
       setSalvando(false);
-      alert("Erro ao salvar orçamento: " + error?.message);
+      toast.error("Erro ao salvar orçamento: " + error?.message);
       return null;
     }
 
@@ -157,6 +158,7 @@ export default function NovoOrcamentoPage() {
       empresa: empresa as ConfiguracaoEmpresa | null,
     });
     doc.save(`orcamento-${resultado.numero}.pdf`);
+    toast.success(`Orçamento nº ${resultado.numero} salvo e PDF gerado!`);
   }
 
   async function handleEnviarWhatsapp() {
@@ -171,6 +173,7 @@ export default function NovoOrcamentoPage() {
     );
     const url = numero ? `https://wa.me/55${numero}?text=${mensagem}` : `https://wa.me/?text=${mensagem}`;
     window.open(url, "_blank");
+    toast.success(`Orçamento nº ${resultado.numero} salvo! Abrindo WhatsApp...`);
   }
 
   return (

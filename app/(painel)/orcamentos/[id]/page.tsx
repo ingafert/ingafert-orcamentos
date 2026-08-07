@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { gerarOrcamentoPdf } from "@/lib/pdf/gerarOrcamentoPdf";
 import type { Cliente, OrcamentoItem, ConfiguracaoEmpresa } from "@/types/database";
 import { FileDown, MessageCircle, PackageCheck, ArrowLeft } from "lucide-react";
+import { SkeletonDetail } from "@/components/Skeleton";
+import { toast } from "sonner";
 import Link from "next/link";
 
 const STATUS_CORES: Record<string, string> = {
@@ -66,6 +68,7 @@ export default function DetalheOrcamentoPage() {
       empresa: empresa as ConfiguracaoEmpresa | null,
     });
     doc.save(`orcamento-${orcamento.numero}.pdf`);
+    toast.success("PDF gerado com sucesso!");
   }
 
   function handleEnviarWhatsapp() {
@@ -77,6 +80,7 @@ export default function DetalheOrcamentoPage() {
     );
     const url = numero ? `https://wa.me/55${numero}?text=${mensagem}` : `https://wa.me/?text=${mensagem}`;
     window.open(url, "_blank");
+    toast.success("Abrindo WhatsApp...");
   }
 
   async function handleConverterEmPedido() {
@@ -98,7 +102,7 @@ export default function DetalheOrcamentoPage() {
 
     if (error || !pedido) {
       setConvertendo(false);
-      alert("Erro ao criar pedido: " + error?.message);
+      toast.error("Erro ao criar pedido: " + error?.message);
       return;
     }
 
@@ -129,10 +133,11 @@ export default function DetalheOrcamentoPage() {
     await supabase.from("orcamentos").update({ status: "convertido" }).eq("id", orcamento.id);
 
     setConvertendo(false);
+    toast.success(`Pedido nº ${pedido.numero} criado com sucesso!`);
     router.push(`/pedidos/${pedido.id}`);
   }
 
-  if (carregando) return <p className="text-gray-400">Carregando...</p>;
+  if (carregando) return <SkeletonDetail />;
   if (!orcamento || !cliente) return <p className="text-gray-400">Orçamento não encontrado.</p>;
 
   return (

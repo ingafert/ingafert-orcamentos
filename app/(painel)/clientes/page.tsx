@@ -4,6 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Cliente } from "@/types/database";
 import { Search, Plus, Pencil, Trash2, X } from "lucide-react";
+import { SkeletonTableRows } from "@/components/Skeleton";
+import { toast } from "sonner";
 
 const CAMPOS_VAZIOS: Omit<Cliente, "id" | "created_at" | "updated_at"> = {
   nome: "",
@@ -68,9 +70,19 @@ export default function ClientesPage() {
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (editandoId) {
-      await supabase.from("clientes").update(form).eq("id", editandoId);
+      const { error } = await supabase.from("clientes").update(form).eq("id", editandoId);
+      if (error) {
+        toast.error("Erro ao atualizar cliente: " + error.message);
+        return;
+      }
+      toast.success("Cliente atualizado!");
     } else {
-      await supabase.from("clientes").insert(form);
+      const { error } = await supabase.from("clientes").insert(form);
+      if (error) {
+        toast.error("Erro ao cadastrar cliente: " + error.message);
+        return;
+      }
+      toast.success("Cliente cadastrado!");
     }
     setModalAberto(false);
     carregar();
@@ -78,7 +90,12 @@ export default function ClientesPage() {
 
   async function excluir(id: string) {
     if (!confirm("Excluir este cliente?")) return;
-    await supabase.from("clientes").delete().eq("id", id);
+    const { error } = await supabase.from("clientes").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+      return;
+    }
+    toast.success("Cliente excluído.");
     carregar();
   }
 
@@ -114,13 +131,7 @@ export default function ClientesPage() {
             </tr>
           </thead>
           <tbody>
-            {carregando && (
-              <tr>
-                <td colSpan={6} className="px-5 py-6 text-center text-gray-400">
-                  Carregando...
-                </td>
-              </tr>
-            )}
+            {carregando && <SkeletonTableRows rows={6} cols={6} />}
             {!carregando && filtrados.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-6 text-center text-gray-400">

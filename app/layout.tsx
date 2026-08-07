@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import RegisterSW from "@/components/RegisterSW";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Ingafert Orçamentos",
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <RegisterSW />
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );

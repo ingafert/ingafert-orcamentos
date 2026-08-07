@@ -1,5 +1,37 @@
 import { createClient } from "@/lib/supabase/server";
 import { Users, Package, FileText, ShoppingCart, TrendingUp, AlertTriangle } from "lucide-react";
+import VendasChart from "@/components/VendasChart";
+
+async function getVendasPorMes() {
+  const supabase = createClient();
+  const seisMesesAtras = new Date();
+  seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 5);
+  seisMesesAtras.setDate(1);
+  seisMesesAtras.setHours(0, 0, 0, 0);
+
+  const { data } = await supabase
+    .from("pedidos")
+    .select("valor_total, created_at, status")
+    .gte("created_at", seisMesesAtras.toISOString())
+    .neq("status", "cancelado");
+
+  const nomesMes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const meses: { chave: string; mes: string; valor: number }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    meses.push({ chave: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, mes: nomesMes[d.getMonth()], valor: 0 });
+  }
+
+  for (const pedido of data ?? []) {
+    const d = new Date(pedido.created_at as string);
+    const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const mes = meses.find((m) => m.chave === chave);
+    if (mes) mes.valor += Number(pedido.valor_total ?? 0);
+  }
+
+  return meses.map(({ mes, valor }) => ({ mes, valor }));
+}
 
 async function getMetrics() {
   const supabase = createClient();
@@ -29,7 +61,7 @@ async function getMetrics() {
 }
 
 export default async function DashboardPage() {
-  const m = await getMetrics();
+  const [m, vendasPorMes] = await Promise.all([getMetrics(), getVendasPorMes()]);
 
   const cards = [
     { label: "Clientes cadastrados", value: m.clientes, icon: Users },
@@ -64,6 +96,11 @@ export default async function DashboardPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="card mt-6">
+        <h2 className="mb-4 text-sm font-bold text-gray-700">Vendas nos últimos 6 meses</h2>
+        <VendasChart dados={vendasPorMes} />
       </div>
     </div>
   );
