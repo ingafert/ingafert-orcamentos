@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Cliente, Produto, OrcamentoItem } from "@/types/database";
+import type { Cliente, Produto, OrcamentoItem, ConfiguracaoEmpresa } from "@/types/database";
 import { gerarOrcamentoPdf } from "@/lib/pdf/gerarOrcamentoPdf";
 import { Search, Plus, Trash2, FileDown, MessageCircle } from "lucide-react";
 
@@ -143,6 +143,8 @@ export default function NovoOrcamentoPage() {
     const resultado = await salvarOrcamento();
     if (!resultado || !clienteSelecionado) return;
 
+    const { data: empresa } = await supabase.from("configuracoes_empresa").select("*").eq("id", true).maybeSingle();
+
     const doc = gerarOrcamentoPdf({
       numero: resultado.numero,
       cliente: clienteSelecionado,
@@ -152,6 +154,7 @@ export default function NovoOrcamentoPage() {
       freteValor: frete,
       total,
       observacoes,
+      empresa: empresa as ConfiguracaoEmpresa | null,
     });
     doc.save(`orcamento-${resultado.numero}.pdf`);
   }

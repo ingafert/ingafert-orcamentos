@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import type { Cliente, OrcamentoItem } from "@/types/database";
+import type { Cliente, OrcamentoItem, ConfiguracaoEmpresa } from "@/types/database";
 
 interface DadosOrcamento {
   numero: number;
@@ -11,20 +11,27 @@ interface DadosOrcamento {
   freteValor: number;
   total: number;
   observacoes?: string;
+  empresa?: Partial<ConfiguracaoEmpresa> | null;
 }
 
-const EMPRESA = {
+const EMPRESA_PADRAO = {
   nome: "Ingafert Peças Agrícolas",
-  cnpj: "00.000.000/0001-00", // TODO: substituir pelo CNPJ real da empresa
-  endereco: "Maringá - PR",
-  telefone: "(44) 0000-0000",
-  site: "www.ingafert.com.br",
+  cnpj: "",
+  endereco: "",
+  cidade: "Maringá",
+  estado: "PR",
+  telefone: "",
+  email: "",
+  pix_chave: "",
 };
 
 export function gerarOrcamentoPdf(dados: DadosOrcamento): jsPDF {
   const doc = new jsPDF();
   const verde: [number, number, number] = [46, 94, 62];
   const ouro: [number, number, number] = [212, 175, 55];
+  const empresa = { ...EMPRESA_PADRAO, ...dados.empresa };
+  const localizacao = [empresa.cidade, empresa.estado].filter(Boolean).join(" - ");
+  const linhaContato = [localizacao, empresa.telefone].filter(Boolean).join(" • ");
 
   // Cabeçalho
   doc.setFillColor(...verde);
@@ -32,10 +39,10 @@ export function gerarOrcamentoPdf(dados: DadosOrcamento): jsPDF {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text(EMPRESA.nome, 14, 15);
+  doc.text(empresa.nome, 14, 15);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`${EMPRESA.endereco} • ${EMPRESA.telefone} • ${EMPRESA.site}`, 14, 22);
+  if (linhaContato) doc.text(linhaContato, 14, 22);
 
   doc.setTextColor(...ouro);
   doc.setFontSize(14);
@@ -114,6 +121,11 @@ export function gerarOrcamentoPdf(dados: DadosOrcamento): jsPDF {
   // Rodapé
   doc.setFontSize(7);
   doc.setTextColor(150, 150, 150);
+  const linhasRodape: string[] = [];
+  if (empresa.cnpj) linhasRodape.push(`CNPJ: ${empresa.cnpj}`);
+  if (empresa.email) linhasRodape.push(empresa.email);
+  if (empresa.pix_chave) linhasRodape.push(`PIX: ${empresa.pix_chave}`);
+  if (linhasRodape.length > 0) doc.text(linhasRodape.join("  •  "), 14, 280);
   doc.text("Orçamento válido por 7 dias. Sujeito a alteração de preço sem aviso prévio.", 14, 285);
 
   return doc;

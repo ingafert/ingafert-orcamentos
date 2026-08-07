@@ -88,6 +88,21 @@ export interface Orcamento {
   itens?: OrcamentoItem[];
 }
 
+export interface ConfiguracaoEmpresa {
+  id: true;
+  nome: string;
+  cnpj: string | null;
+  endereco: string | null;
+  cidade: string | null;
+  estado: string | null;
+  cep: string | null;
+  telefone: string | null;
+  email: string | null;
+  pix_chave: string | null;
+  logo_url: string | null;
+  updated_at: string;
+}
+
 // Placeholder mínimo para o tipo Database exigido pelo cliente Supabase tipado.
 // Gere o tipo completo depois com: npx supabase gen types typescript --project-id SEU_ID
 export type Database = any;
