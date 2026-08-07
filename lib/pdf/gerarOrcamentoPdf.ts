@@ -31,18 +31,25 @@ export function gerarOrcamentoPdf(dados: DadosOrcamento): jsPDF {
   const ouro: [number, number, number] = [212, 175, 55];
   const empresa = { ...EMPRESA_PADRAO, ...dados.empresa };
   const localizacao = [empresa.cidade, empresa.estado].filter(Boolean).join(" - ");
-  const linhaContato = [localizacao, empresa.telefone].filter(Boolean).join(" • ");
+
+  // Linha 2: endereço completo + cidade/UF + telefone
+  const linhaEndereco = [empresa.endereco, localizacao, empresa.telefone].filter(Boolean).join(" • ");
+  // Linha 3: CNPJ + e-mail — os dados que mais passam credibilidade, sempre visíveis no cabeçalho
+  const linhaFiscal = [empresa.cnpj ? `CNPJ: ${empresa.cnpj}` : null, empresa.email].filter(Boolean).join(" • ");
+
+  const alturaCabecalho = linhaFiscal ? 36 : 30;
 
   // Cabeçalho
   doc.setFillColor(...verde);
-  doc.rect(0, 0, 210, 30, "F");
+  doc.rect(0, 0, 210, alturaCabecalho, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.text(empresa.nome, 14, 15);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  if (linhaContato) doc.text(linhaContato, 14, 22);
+  if (linhaEndereco) doc.text(linhaEndereco, 14, 22);
+  if (linhaFiscal) doc.text(linhaFiscal, 14, 28);
 
   doc.setTextColor(...ouro);
   doc.setFontSize(14);
@@ -53,7 +60,7 @@ export function gerarOrcamentoPdf(dados: DadosOrcamento): jsPDF {
   doc.text(new Date().toLocaleDateString("pt-BR"), 140, 22);
 
   // Dados do cliente
-  let y = 40;
+  let y = alturaCabecalho + 10;
   doc.setTextColor(30, 30, 30);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
@@ -121,11 +128,7 @@ export function gerarOrcamentoPdf(dados: DadosOrcamento): jsPDF {
   // Rodapé
   doc.setFontSize(7);
   doc.setTextColor(150, 150, 150);
-  const linhasRodape: string[] = [];
-  if (empresa.cnpj) linhasRodape.push(`CNPJ: ${empresa.cnpj}`);
-  if (empresa.email) linhasRodape.push(empresa.email);
-  if (empresa.pix_chave) linhasRodape.push(`PIX: ${empresa.pix_chave}`);
-  if (linhasRodape.length > 0) doc.text(linhasRodape.join("  •  "), 14, 280);
+  if (empresa.pix_chave) doc.text(`Chave PIX para pagamento: ${empresa.pix_chave}`, 14, 280);
   doc.text("Orçamento válido por 7 dias. Sujeito a alteração de preço sem aviso prévio.", 14, 285);
 
   return doc;
