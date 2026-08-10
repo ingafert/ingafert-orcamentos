@@ -26,6 +26,8 @@ export default function NovoOrcamentoPage() {
 
   const [descontoGeral, setDescontoGeral] = useState(0);
   const [frete, setFrete] = useState(0);
+  const [outrosCustos, setOutrosCustos] = useState(0);
+  const [garantia, setGarantia] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -87,7 +89,7 @@ export default function NovoOrcamentoPage() {
     0
   );
   const descontoValorGeral = ((subtotal - descontoItens) * descontoGeral) / 100;
-  const total = subtotal - descontoItens - descontoValorGeral + frete;
+  const total = subtotal - descontoItens - descontoValorGeral + frete + outrosCustos;
 
   async function salvarOrcamento(): Promise<{ orcamentoId: string; numero: number; itensCompletos: OrcamentoItem[] } | null> {
     if (!clienteSelecionado || itens.length === 0) return null;
@@ -101,6 +103,8 @@ export default function NovoOrcamentoPage() {
         desconto_percentual: descontoGeral,
         desconto_valor: descontoItens + descontoValorGeral,
         frete_valor: frete,
+        outros_custos: outrosCustos,
+        garantia,
         total,
         observacoes,
         status: "aberto",
@@ -153,6 +157,8 @@ export default function NovoOrcamentoPage() {
       subtotal,
       descontoValor: descontoItens + descontoValorGeral,
       freteValor: frete,
+      outrosCustos,
+      garantia,
       total,
       observacoes,
       empresa: empresa as ConfiguracaoEmpresa | null,
@@ -169,8 +175,9 @@ export default function NovoOrcamentoPage() {
     const linkAprovacao = `${window.location.origin}/orcamento/${resultado.orcamentoId}`;
     const mensagem = encodeURIComponent(
       `Olá ${clienteSelecionado.nome}, segue o orçamento nº ${resultado.numero} da Ingafert Peças Agrícolas.\n` +
-        `Total: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}\n\n` +
-        `Veja os itens e aprove online: ${linkAprovacao}`
+        `Total: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}\n` +
+        (garantia ? `Garantia: ${garantia}\n` : "") +
+        `\nVeja os itens e aprove online: ${linkAprovacao}`
     );
     const url = numero ? `https://wa.me/55${numero}?text=${mensagem}` : `https://wa.me/?text=${mensagem}`;
     window.open(url, "_blank");
@@ -318,6 +325,17 @@ export default function NovoOrcamentoPage() {
           </div>
 
           <div className="card">
+            <label className="label">Garantia</label>
+            <input
+              type="text"
+              placeholder="Ex: 90 dias contra defeito de fabricação"
+              className="input"
+              value={garantia}
+              onChange={(e) => setGarantia(e.target.value)}
+            />
+          </div>
+
+          <div className="card">
             <label className="label">Observações</label>
             <textarea className="input" rows={3} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
           </div>
@@ -342,6 +360,16 @@ export default function NovoOrcamentoPage() {
             <label className="label">Frete (R$)</label>
             <input type="number" min={0} value={frete} onChange={(e) => setFrete(Number(e.target.value))} className="input" />
           </div>
+          <div>
+            <label className="label">Outros custos (R$)</label>
+            <input
+              type="number"
+              min={0}
+              value={outrosCustos}
+              onChange={(e) => setOutrosCustos(Number(e.target.value))}
+              className="input"
+            />
+          </div>
 
           <div className="space-y-1 border-t border-gray-100 pt-3 text-sm">
             <div className="flex justify-between text-gray-500">
@@ -355,6 +383,10 @@ export default function NovoOrcamentoPage() {
             <div className="flex justify-between text-gray-500">
               <span>Frete</span>
               <span>{frete.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+            </div>
+            <div className="flex justify-between text-gray-500">
+              <span>Outros custos</span>
+              <span>{outrosCustos.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
             </div>
             <div className="flex justify-between border-t border-gray-100 pt-2 text-base font-bold text-ingafert-verde-escuro">
               <span>Total</span>
