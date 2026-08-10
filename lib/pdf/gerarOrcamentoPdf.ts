@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { Cliente, OrcamentoItem } from "@/types/database";
+import { formaPagamentoLabel } from "@/lib/constants/formaPagamento";
 
 interface DadosOrcamento {
   numero: number;
@@ -11,6 +12,7 @@ interface DadosOrcamento {
   freteValor: number;
   outrosCustos?: number;
   garantia?: string;
+  formaPagamento?: string;
   total: number;
   observacoes?: string;
 }
@@ -107,6 +109,10 @@ export function gerarOrcamentoPdf(dados: DadosOrcamento): jsPDF {
       140,
       yTotais
     );
+    yTotais += 5;
+  }
+  if (dados.formaPagamento) {
+    doc.text(`Pagamento: ${formaPagamentoLabel(dados.formaPagamento)}`, 140, yTotais);
     yTotais += 5;
   }
   yTotais += 3;

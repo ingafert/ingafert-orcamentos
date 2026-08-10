@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Cliente, Produto, OrcamentoItem, ConfiguracaoEmpresa } from "@/types/database";
 import { gerarOrcamentoPdf } from "@/lib/pdf/gerarOrcamentoPdf";
+import { FORMAS_PAGAMENTO, formaPagamentoLabel } from "@/lib/constants/formaPagamento";
 import { Search, Plus, Trash2, FileDown, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +29,7 @@ export default function NovoOrcamentoPage() {
   const [frete, setFrete] = useState(0);
   const [outrosCustos, setOutrosCustos] = useState(0);
   const [garantia, setGarantia] = useState("");
+  const [formaPagamento, setFormaPagamento] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -105,6 +107,7 @@ export default function NovoOrcamentoPage() {
         frete_valor: frete,
         outros_custos: outrosCustos,
         garantia,
+        forma_pagamento: formaPagamento || null,
         total,
         observacoes,
         status: "aberto",
@@ -159,6 +162,7 @@ export default function NovoOrcamentoPage() {
       freteValor: frete,
       outrosCustos,
       garantia,
+      formaPagamento,
       total,
       observacoes,
       empresa: empresa as ConfiguracaoEmpresa | null,
@@ -176,6 +180,7 @@ export default function NovoOrcamentoPage() {
     const mensagem = encodeURIComponent(
       `Olá ${clienteSelecionado.nome}, segue o orçamento nº ${resultado.numero} da Ingafert Peças Agrícolas.\n` +
         `Total: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}\n` +
+        (formaPagamento ? `Forma de pagamento: ${formaPagamentoLabel(formaPagamento)}\n` : "") +
         (garantia ? `Garantia: ${garantia}\n` : "") +
         `\nVeja os itens e aprove online: ${linkAprovacao}`
     );
@@ -333,6 +338,22 @@ export default function NovoOrcamentoPage() {
               value={garantia}
               onChange={(e) => setGarantia(e.target.value)}
             />
+          </div>
+
+          <div className="card">
+            <label className="label">Forma de pagamento</label>
+            <select
+              className="input"
+              value={formaPagamento}
+              onChange={(e) => setFormaPagamento(e.target.value)}
+            >
+              <option value="">Selecione...</option>
+              {FORMAS_PAGAMENTO.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="card">
