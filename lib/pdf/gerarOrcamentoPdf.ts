@@ -31,16 +31,25 @@ export function gerarOrcamentoPdf(dados: DadosOrcamento): jsPDF {
   const verde: [number, number, number] = [46, 94, 62];
   const ouro: [number, number, number] = [212, 175, 55];
 
+  // Dados reais da empresa (configuracoes_empresa), com fallback para os valores padrão
+  const empresaNome = dados.empresa?.nome || EMPRESA.nome;
+  const empresaCnpj = dados.empresa?.cnpj || EMPRESA.cnpj;
+  const empresaTelefone = dados.empresa?.telefone || EMPRESA.telefone;
+  const empresaEndereco = dados.empresa?.endereco
+    ? `${dados.empresa.endereco}${dados.empresa.cidade ? " - " + dados.empresa.cidade + "/" + (dados.empresa.estado ?? "") : ""}`
+    : EMPRESA.endereco;
+  const empresaPixChave = dados.empresa?.pix_chave;
+
   // Cabeçalho
   doc.setFillColor(...verde);
   doc.rect(0, 0, 210, 30, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text(EMPRESA.nome, 14, 15);
+  doc.text(empresaNome, 14, 15);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`${EMPRESA.endereco} • ${EMPRESA.telefone} • ${EMPRESA.site}`, 14, 22);
+  doc.text(`${empresaEndereco} • ${empresaTelefone} • CNPJ ${empresaCnpj}`, 14, 22);
 
   doc.setTextColor(...ouro);
   doc.setFontSize(14);
@@ -115,6 +124,12 @@ export function gerarOrcamentoPdf(dados: DadosOrcamento): jsPDF {
   if (dados.formaPagamento) {
     doc.text(`Pagamento: ${formaPagamentoLabel(dados.formaPagamento)}`, 140, yTotais);
     yTotais += 5;
+    if (dados.formaPagamento === "pix" && empresaPixChave) {
+      doc.setFont("helvetica", "bold");
+      doc.text(`Chave PIX: ${empresaPixChave}`, 140, yTotais);
+      doc.setFont("helvetica", "normal");
+      yTotais += 5;
+    }
   }
   yTotais += 3;
   doc.setFont("helvetica", "bold");
