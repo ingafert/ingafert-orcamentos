@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import type { Cliente, OrcamentoItem } from "@/types/database";
+import type { Cliente, OrcamentoItem, ConfiguracaoEmpresa } from "@/types/database";
 import { formaPagamentoLabel } from "@/lib/constants/formaPagamento";
 
 interface DadosOrcamento {
@@ -15,6 +15,7 @@ interface DadosOrcamento {
   formaPagamento?: string;
   total: number;
   observacoes?: string;
+  empresa?: ConfiguracaoEmpresa | null;
 }
 
 const EMPRESA = {
