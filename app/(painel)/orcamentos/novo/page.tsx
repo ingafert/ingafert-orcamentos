@@ -26,6 +26,8 @@ export default function NovoOrcamentoPage() {
 
   const [descontoGeral, setDescontoGeral] = useState(0);
   const [frete, setFrete] = useState(0);
+  const [outrosCustos, setOutrosCustos] = useState(0);
+  const [garantia, setGarantia] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -87,7 +89,7 @@ export default function NovoOrcamentoPage() {
     0
   );
   const descontoValorGeral = ((subtotal - descontoItens) * descontoGeral) / 100;
-  const total = subtotal - descontoItens - descontoValorGeral + frete;
+  const total = subtotal - descontoItens - descontoValorGeral + frete + outrosCustos;
 
   async function salvarOrcamento(): Promise<{ orcamentoId: string; numero: number; itensCompletos: OrcamentoItem[] } | null> {
     if (!clienteSelecionado || itens.length === 0) return null;
