@@ -47,3 +47,33 @@ body {
 .label {
   @apply mb-1.5 block text-xs font-medium text-gray-500;
 }
+
+/* Selos de status (orçamentos, pedidos) */
+.badge {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
+}
+
+.badge-sucesso {
+  @apply bg-emerald-50 text-emerald-700;
+}
+
+.badge-alerta {
+  @apply bg-amber-50 text-amber-700;
+}
+
+.badge-neutro {
+  @apply bg-gray-100 text-gray-500;
+}
+
+/* Cartão de indicador numérico (dashboard, listas) */
+.stat-card {
+  @apply card flex flex-col gap-1 p-5;
+}
+
+.stat-card .valor {
+  @apply text-2xl font-bold text-ingafert-verde-escuro;
+}
+
+.stat-card .rotulo {
+  @apply text-xs font-medium text-gray-400;
+}

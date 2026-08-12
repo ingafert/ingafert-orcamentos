@@ -1,5 +1,14 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Users, Package, FileText, ShoppingCart, TrendingUp, AlertTriangle } from "lucide-react";
+import {
+  Users,
+  Package,
+  FileText,
+  ShoppingCart,
+  TrendingUp,
+  AlertTriangle,
+  ArrowRight,
+} from "lucide-react";
 import VendasChart from "@/components/VendasChart";
 
 async function getVendasPorMes() {
@@ -20,7 +29,11 @@ async function getVendasPorMes() {
   for (let i = 5; i >= 0; i--) {
     const d = new Date();
     d.setMonth(d.getMonth() - i);
-    meses.push({ chave: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, mes: nomesMes[d.getMonth()], valor: 0 });
+    meses.push({
+      chave: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      mes: nomesMes[d.getMonth()],
+      valor: 0,
+    });
   }
 
   for (const pedido of data ?? []) {
@@ -60,8 +73,40 @@ async function getMetrics() {
   };
 }
 
+async function getUltimosOrcamentos() {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("orcamentos")
+    .select("id, numero, total, status, created_at, clientes(nome)")
+    .order("created_at", { ascending: false })
+    .limit(5);
+  return data ?? [];
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  aberto: "Aberto",
+  enviado: "Enviado",
+  aprovado: "Aprovado",
+  recusado: "Recusado",
+  expirado: "Expirado",
+  convertido: "Convertido",
+};
+
+const STATUS_BADGE: Record<string, string> = {
+  aberto: "badge-neutro",
+  enviado: "badge-alerta",
+  aprovado: "badge-sucesso",
+  recusado: "bg-red-50 text-red-600",
+  expirado: "badge-alerta",
+  convertido: "badge-sucesso",
+};
+
 export default async function DashboardPage() {
-  const [m, vendasPorMes] = await Promise.all([getMetrics(), getVendasPorMes()]);
+  const [m, vendasPorMes, ultimosOrcamentos] = await Promise.all([
+    getMetrics(),
+    getVendasPorMes(),
+    getUltimosOrcamentos(),
+  ]);
 
   const cards = [
     { label: "Clientes cadastrados", value: m.clientes, icon: Users },
@@ -76,9 +121,18 @@ export default async function DashboardPage() {
     { label: "Produtos sem estoque", value: m.semEstoque, icon: AlertTriangle, alerta: m.semEstoque > 0 },
   ];
 
+  const hoje = new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  });
+
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-ingafert-verde-escuro">Dashboard</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-ingafert-verde-escuro">Dashboard</h1>
+        <p className="text-sm capitalize text-gray-400">{hoje}</p>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map(({ label, value, icon: Icon, alerta }) => (
@@ -98,9 +152,49 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="card mt-6">
-        <h2 className="mb-4 text-sm font-bold text-gray-700">Vendas nos últimos 6 meses</h2>
-        <VendasChart dados={vendasPorMes} />
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="card min-w-0 lg:col-span-2">
+          <h2 className="mb-4 text-sm font-bold text-gray-700">Vendas nos últimos 6 meses</h2>
+          <VendasChart dados={vendasPorMes} />
+        </div>
+
+        <div className="card">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-gray-700">Últimos orçamentos</h2>
+            <Link
+              href="/orcamentos"
+              className="inline-flex items-center gap-1 text-xs font-medium text-ingafert-verde hover:underline"
+            >
+              Ver todos <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+
+          {ultimosOrcamentos.length === 0 && (
+            <p className="py-6 text-center text-sm text-gray-400">Nenhum orçamento ainda.</p>
+          )}
+
+          <div className="space-y-1">
+            {ultimosOrcamentos.map((o: any) => (
+              <Link
+                key={o.id}
+                href={`/orcamentos/${o.id}`}
+                className="flex items-center justify-between rounded-xl px-2 py-2 transition-colors hover:bg-gray-50"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-gray-800">
+                    #{String(o.numero).padStart(6, "0")} · {o.clientes?.nome}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {new Date(o.created_at).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+                <span className={`badge shrink-0 ${STATUS_BADGE[o.status] ?? "badge-neutro"}`}>
+                  {STATUS_LABELS[o.status] ?? o.status}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

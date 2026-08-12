@@ -7,10 +7,19 @@ interface Ponto {
   valor: number;
 }
 
+function formatarEixo(valor: number) {
+  if (valor >= 1000) return `${(valor / 1000).toFixed(0)}k`;
+  return valor.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  });
+}
+
 export default function VendasChart({ dados }: { dados: Ponto[] }) {
   return (
-    <div className="h-64 w-full">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-64 w-full min-w-0 overflow-hidden">
+      <ResponsiveContainer width="100%" height="100%" debounce={200}>
         <AreaChart data={dados} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="corVenda" x1="0" y1="0" x2="0" y2="1">
@@ -24,11 +33,13 @@ export default function VendasChart({ dados }: { dados: Ponto[] }) {
             tick={{ fontSize: 12, fill: "#9ca3af" }}
             axisLine={false}
             tickLine={false}
-            width={48}
-            tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+            width={56}
+            tickFormatter={formatarEixo}
           />
           <Tooltip
-            formatter={(value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            formatter={(value: number) =>
+              value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+            }
             contentStyle={{ borderRadius: 12, border: "1px solid #e5e7eb", fontSize: 13 }}
           />
           <Area type="monotone" dataKey="valor" stroke="#2E5E3E" strokeWidth={2} fill="url(#corVenda)" />

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Produto } from "@/types/database";
-import { Search, ImageOff, Pencil, Check, X } from "lucide-react";
+import { Search, ImageOff, Pencil, Check, X, AlertTriangle } from "lucide-react";
 import ImportarExcel from "./ImportarExcel";
 import ExportarMfRural from "./ExportarMfRural";
 import NovoProdutoForm from "./NovoProdutoForm";
@@ -102,6 +102,11 @@ export default function ProdutosPage() {
     setEditandoId(null);
   }
 
+  const semPrecoCount = produtos.filter(
+    (p) => !p.preco_venda || Number(p.preco_venda) === 0
+  ).length;
+  const semEstoqueCount = produtos.filter((p) => !p.estoque || p.estoque <= 0).length;
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -113,9 +118,24 @@ export default function ProdutosPage() {
         </div>
       </div>
 
-      <div className="card mb-4 flex flex-col gap-3 py-3 sm:flex-row sm:items-center">
-        <div className="flex flex-1 items-center gap-3">
-          <Search className="h-4 w-4 text-gray-400" />
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="stat-card">
+          <span className="rotulo">Produtos nesta lista</span>
+          <span className="valor">{produtos.length}</span>
+        </div>
+        <div className="stat-card">
+          <span className="rotulo">Sem preço definido</span>
+          <span className="valor">{semPrecoCount}</span>
+        </div>
+        <div className="stat-card">
+          <span className="rotulo">Sem estoque</span>
+          <span className="valor">{semEstoqueCount}</span>
+        </div>
+      </div>
+
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="card flex flex-1 items-center gap-3 py-2.5">
+          <Search className="h-4 w-4 shrink-0 text-gray-400" />
           <input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
@@ -133,22 +153,25 @@ export default function ProdutosPage() {
           <option value="codigo_industria">Código da indústria</option>
           <option value="nome">Nome</option>
         </select>
+        <button
+          type="button"
+          onClick={() => setSomenteSemPreco((v) => !v)}
+          className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
+            somenteSemPreco
+              ? "bg-ingafert-verde text-white"
+              : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+          }`}
+        >
+          Sem preço
+        </button>
       </div>
-
-      <label className="mb-4 flex w-fit cursor-pointer items-center gap-2 text-sm text-gray-600">
-        <input
-          type="checkbox"
-          checked={somenteSemPreco}
-          onChange={(e) => setSomenteSemPreco(e.target.checked)}
-          className="h-4 w-4"
-        />
-        Mostrar só produtos sem preço (R$ 0,00)
-      </label>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {carregando && <SkeletonCards count={8} />}
         {!carregando && produtos.length === 0 && (
-          <p className="col-span-full text-center text-gray-400">Nenhum produto encontrado.</p>
+          <p className="col-span-full py-10 text-center text-sm text-gray-400">
+            Nenhum produto encontrado.
+          </p>
         )}
         {produtos.map((p) => {
           const semPreco = !p.preco_venda || Number(p.preco_venda) === 0;
@@ -158,13 +181,17 @@ export default function ProdutosPage() {
             <div
               key={p.id}
               className={`card flex flex-col gap-3 p-4 ${
-                semPreco ? "border-2 border-red-400" : ""
+                semPreco ? "border-2 border-red-200" : ""
               }`}
             >
               <div className="flex h-32 items-center justify-center overflow-hidden rounded-xl bg-gray-50">
                 {p.imagem_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.imagem_url} alt={p.alt_imagem ?? p.nome} className="h-full w-full object-contain" />
+                  <img
+                    src={p.imagem_url}
+                    alt={p.alt_imagem ?? p.nome}
+                    className="h-full w-full object-contain"
+                  />
                 ) : (
                   <ImageOff className="h-8 w-8 text-gray-300" />
                 )}
@@ -228,13 +255,19 @@ export default function ProdutosPage() {
                 )}
 
                 {!editando && (
-                  <p className={`text-xs font-medium ${p.estoque > 0 ? "text-gray-400" : "text-red-500"}`}>
+                  <span
+                    className={`badge shrink-0 ${
+                      p.estoque > 0 ? "badge-neutro" : "bg-red-50 text-red-600"
+                    }`}
+                  >
                     {p.estoque > 0 ? `${p.estoque} em estoque` : "Sem estoque"}
-                  </p>
+                  </span>
                 )}
               </div>
               {semPreco && !editando && (
-                <p className="text-xs font-medium text-red-500">⚠ Preço não definido</p>
+                <span className="badge w-fit gap-1 bg-red-50 text-red-600">
+                  <AlertTriangle className="h-3 w-3" /> Preço não definido
+                </span>
               )}
             </div>
           );
