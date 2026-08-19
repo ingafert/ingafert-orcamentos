@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Cliente } from "@/types/database";
-import { Search, Plus, Pencil, Trash2, X, Users } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, X } from "lucide-react";
 import { SkeletonTableRows } from "@/components/Skeleton";
 import { toast } from "sonner";
 
@@ -54,19 +54,6 @@ export default function ClientesPage() {
         c.email?.toLowerCase().includes(termo)
     );
   }, [busca, clientes]);
-
-  const novosEsteMes = useMemo(() => {
-    const agora = new Date();
-    return clientes.filter((c: any) => {
-      if (!c.created_at) return false;
-      const d = new Date(c.created_at);
-      return d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear();
-    }).length;
-  }, [clientes]);
-
-  const estadosAtendidos = useMemo(() => {
-    return new Set(clientes.map((c) => c.estado).filter(Boolean)).size;
-  }, [clientes]);
 
   function abrirNovo() {
     setEditandoId(null);
@@ -121,21 +108,6 @@ export default function ClientesPage() {
         </button>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="stat-card">
-          <span className="rotulo">Total de clientes</span>
-          <span className="valor">{clientes.length}</span>
-        </div>
-        <div className="stat-card">
-          <span className="rotulo">Novos este mês</span>
-          <span className="valor">{novosEsteMes}</span>
-        </div>
-        <div className="stat-card">
-          <span className="rotulo">Estados atendidos</span>
-          <span className="valor">{estadosAtendidos}</span>
-        </div>
-      </div>
-
       <div className="card mb-4 flex items-center gap-3 py-3">
         <Search className="h-4 w-4 text-gray-400" />
         <input
@@ -160,62 +132,32 @@ export default function ClientesPage() {
           </thead>
           <tbody>
             {carregando && <SkeletonTableRows rows={6} cols={6} />}
-
             {!carregando && filtrados.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-16">
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-ingafert-verde/10">
-                      <Users className="h-6 w-6 text-ingafert-verde" />
-                    </div>
-                    {busca ? (
-                      <>
-                        <p className="font-medium text-gray-600">
-                          Nenhum cliente encontrado para &quot;{busca}&quot;
-                        </p>
-                        <button
-                          onClick={() => setBusca("")}
-                          className="mt-2 text-sm text-ingafert-verde hover:underline"
-                        >
-                          Limpar busca
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <p className="font-medium text-gray-600">Nenhum cliente cadastrado ainda</p>
-                        <p className="mt-1 text-sm text-gray-400">
-                          Cadastre o primeiro cliente pra começar a gerar orçamentos.
-                        </p>
-                        <button onClick={abrirNovo} className="btn-primary mt-4">
-                          <Plus className="h-4 w-4" /> Cadastrar primeiro cliente
-                        </button>
-                      </>
-                    )}
-                  </div>
+                <td colSpan={6} className="px-5 py-6 text-center text-gray-400">
+                  Nenhum cliente encontrado.
                 </td>
               </tr>
             )}
-
-            {!carregando &&
-              filtrados.map((c) => (
-                <tr key={c.id} className="border-t border-gray-50 hover:bg-gray-50/50">
-                  <td className="px-5 py-3 font-medium text-gray-800">{c.nome}</td>
-                  <td className="px-5 py-3 text-gray-500">{c.empresa || "-"}</td>
-                  <td className="px-5 py-3 text-gray-500">{c.cpf_cnpj || "-"}</td>
-                  <td className="px-5 py-3 text-gray-500">{c.whatsapp || "-"}</td>
-                  <td className="px-5 py-3 text-gray-500">
-                    {c.cidade ? `${c.cidade}/${c.estado ?? ""}` : "-"}
-                  </td>
-                  <td className="px-5 py-3 text-right">
-                    <button onClick={() => abrirEdicao(c)} className="mr-2 text-gray-400 hover:text-ingafert-verde">
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button onClick={() => excluir(c.id)} className="text-gray-400 hover:text-red-500">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+            {filtrados.map((c) => (
+              <tr key={c.id} className="border-t border-gray-50 hover:bg-gray-50/50">
+                <td className="px-5 py-3 font-medium text-gray-800">{c.nome}</td>
+                <td className="px-5 py-3 text-gray-500">{c.empresa || "-"}</td>
+                <td className="px-5 py-3 text-gray-500">{c.cpf_cnpj || "-"}</td>
+                <td className="px-5 py-3 text-gray-500">{c.whatsapp || "-"}</td>
+                <td className="px-5 py-3 text-gray-500">
+                  {c.cidade ? `${c.cidade}/${c.estado ?? ""}` : "-"}
+                </td>
+                <td className="px-5 py-3 text-right">
+                  <button onClick={() => abrirEdicao(c)} className="mr-2 text-gray-400 hover:text-ingafert-verde">
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => excluir(c.id)} className="text-gray-400 hover:text-red-500">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

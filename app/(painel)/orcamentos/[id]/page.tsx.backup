@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { gerarOrcamentoPdf } from "@/lib/pdf/gerarOrcamentoPdf";
 import type { Cliente, OrcamentoItem, ConfiguracaoEmpresa } from "@/types/database";
-import { FileDown, MessageCircle, PackageCheck, ArrowLeft, Link as LinkIcon, Pencil, Home } from "lucide-react";
+import { FileDown, MessageCircle, PackageCheck, ArrowLeft, Link as LinkIcon } from "lucide-react";
 import { SkeletonDetail } from "@/components/Skeleton";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -151,14 +151,9 @@ export default function DetalheOrcamentoPage() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-4">
-        <Link href="/orcamentos" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-ingafert-verde">
-          <ArrowLeft className="h-4 w-4" /> Voltar
-        </Link>
-        <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-ingafert-verde">
-          <Home className="h-4 w-4" /> Menu principal
-        </Link>
-      </div>
+      <Link href="/orcamentos" className="mb-4 inline-flex items-center gap-1 text-sm text-gray-400 hover:text-ingafert-verde">
+        <ArrowLeft className="h-4 w-4" /> Voltar
+      </Link>
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -170,11 +165,6 @@ export default function DetalheOrcamentoPage() {
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
-          {orcamento.status !== "convertido" && (
-            <Link href={`/orcamentos/${orcamento.id}/editar`} className="btn-secondary">
-              <Pencil className="h-4 w-4" /> Editar
-            </Link>
-          )}
           <button onClick={handleGerarPdf} className="btn-secondary">
             <FileDown className="h-4 w-4" /> PDF
           </button>

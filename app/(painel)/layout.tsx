@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   LayoutDashboard,
   Users,
@@ -15,6 +16,7 @@ import {
   X,
   Search,
   Bell,
+  LogOut,
 } from "lucide-react";
 
 const NAV = [
@@ -29,10 +31,127 @@ const NAV = [
 
 export default function PainelLayout({ children }: { children: React.ReactNode }) {
   const [menuAberto, setMenuAberto] = useState(false);
+  const [saindo, setSaindo] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
 
   const paginaAtual =
     NAV.find((item) => pathname?.startsWith(item.href))?.label ?? "Ingafert Orçamentos";
+
+  async function handleSair() {
+    setSaindo(true);
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
+  // Busca global no cabeçalho
+  const [buscaGlobal, setBuscaGlobal] = useState("");
+  const [mostrarResultados, setMostrarResultados] = useState(false);
+  const [buscandoGlobal, setBuscandoGlobal] = useState(false);
+  const [resultadosBusca, setResultadosBusca] = useState<{
+    orcamentos: any[];
+    clientes: any[];
+    produtos: any[];
+  }>({ orcamentos: [], clientes: [], produtos: [] });
+
+  useEffect(() => {
+    const termo = buscaGlobal.trim();
+    if (termo.length < 2) {
+      setResultadosBusca({ orcamentos: [], clientes: [], produtos: [] });
+      return;
+    }
+    setBuscandoGlobal(true);
+    const t = setTimeout(async () => {
+      const [clientesRes, produtosRes, orcamentosPorClienteRes] = await Promise.all([
+        supabase
+          .from("clientes")
+          .select("id, nome, empresa")
+          .or(`nome.ilike.%${termo}%,empresa.ilike.%${termo}%`)
+          .limit(5),
+        supabase
+          .from("produtos")
+          .select("id, nome, codigo_ingafert")
+          .or(`nome.ilike.%${termo}%,codigo_ingafert.ilike.%${termo}%`)
+          .limit(5),
+        supabase
+          .from("orcamentos")
+          .select("id, numero, total, clientes!inner(nome)")
+          .ilike("clientes.nome", `%${termo}%`)
+          .limit(5),
+      ]);
+
+      let orcamentosPorNumero: any[] = [];
+      if (/^\d+$/.test(termo)) {
+        const { data } = await supabase
+          .from("orcamentos")
+          .select("id, numero, total, clientes(nome)")
+          .eq("numero", Number(termo))
+          .limit(5);
+        orcamentosPorNumero = data ?? [];
+      }
+
+      const orcamentosCombinados = [...(orcamentosPorClienteRes.data ?? []), ...orcamentosPorNumero].filter(
+        (o, idx, arr) => arr.findIndex((x) => x.id === o.id) === idx
+      );
+
+      setResultadosBusca({
+        clientes: (clientesRes.data as any[]) ?? [],
+        produtos: (produtosRes.data as any[]) ?? [],
+        orcamentos: orcamentosCombinados,
+      });
+      setBuscandoGlobal(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [buscaGlobal]);
+
+  const temResultados =
+    resultadosBusca.orcamentos.length + resultadosBusca.clientes.length + resultadosBusca.produtos.length > 0;
+
+  function irPara(destino: string) {
+    router.push(destino);
+    setBuscaGlobal("");
+    setMostrarResultados(false);
+  }
+
+  // Notificações
+  const [notificacoes, setNotificacoes] = useState<any[]>([]);
+  const [mostrarNotificacoes, setMostrarNotificacoes] = useState(false);
+  const naoLidas = notificacoes.filter((n) => !n.lida).length;
+
+  async function carregarNotificacoes() {
+    const { data } = await supabase
+      .from("notificacoes")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(15);
+    setNotificacoes(data ?? []);
+  }
+
+  useEffect(() => {
+    carregarNotificacoes();
+    const intervalo = setInterval(carregarNotificacoes, 30000);
+    return () => clearInterval(intervalo);
+  }, []);
+
+  async function abrirNotificacao(n: any) {
+    if (!n.lida) {
+      await supabase.from("notificacoes").update({ lida: true }).eq("id", n.id);
+      setNotificacoes((prev) => prev.map((x) => (x.id === n.id ? { ...x, lida: true } : x)));
+    }
+    setMostrarNotificacoes(false);
+    if (n.orcamento_id) {
+      router.push(`/orcamentos/${n.orcamento_id}`);
+    }
+  }
+
+  async function marcarTodasComoLidas() {
+    const idsNaoLidos = notificacoes.filter((n) => !n.lida).map((n) => n.id);
+    if (idsNaoLidos.length === 0) return;
+    await supabase.from("notificacoes").update({ lida: true }).in("id", idsNaoLidos);
+    setNotificacoes((prev) => prev.map((n) => ({ ...n, lida: true })));
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -88,6 +207,16 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
             <p className="truncate text-xs text-gray-400">contato@ingafert.com.br</p>
           </div>
         </div>
+
+        {/* Botão de sair (logout) */}
+        <button
+          onClick={handleSair}
+          disabled={saindo}
+          className="mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+        >
+          <LogOut className="h-4 w-4" />
+          {saindo ? "Saindo..." : "Sair"}
+        </button>
       </aside>
 
       {/* Fundo escurecido atrás do menu no celular, fecha ao tocar fora */}
@@ -110,17 +239,132 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
+                value={buscaGlobal}
+                onChange={(e) => setBuscaGlobal(e.target.value)}
+                onFocus={() => setMostrarResultados(true)}
+                onBlur={() => setTimeout(() => setMostrarResultados(false), 150)}
                 placeholder="Buscar orçamento, cliente ou produto"
                 className="input w-64 py-2 pl-9 text-sm"
               />
+
+              {mostrarResultados && buscaGlobal.trim().length >= 2 && (
+                <div className="absolute right-0 z-20 mt-1 w-80 rounded-xl border border-gray-100 bg-white py-2 shadow-lg">
+                  {buscandoGlobal ? (
+                    <p className="px-4 py-3 text-sm text-gray-400">Buscando...</p>
+                  ) : temResultados ? (
+                    <>
+                      {resultadosBusca.orcamentos.length > 0 && (
+                        <div className="mb-1">
+                          <p className="px-4 pb-1 text-xs font-semibold uppercase text-gray-400">Orçamentos</p>
+                          {resultadosBusca.orcamentos.map((o) => (
+                            <button
+                              key={o.id}
+                              onMouseDown={() => irPara(`/orcamentos/${o.id}`)}
+                              className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+                            >
+                              <span className="font-medium text-gray-800">
+                                #{String(o.numero).padStart(6, "0")}
+                              </span>{" "}
+                              <span className="text-gray-400">{o.clientes?.nome}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {resultadosBusca.clientes.length > 0 && (
+                        <div className="mb-1">
+                          <p className="px-4 pb-1 text-xs font-semibold uppercase text-gray-400">Clientes</p>
+                          {resultadosBusca.clientes.map((c) => (
+                            <button
+                              key={c.id}
+                              onMouseDown={() => irPara(`/clientes?busca=${encodeURIComponent(c.nome)}`)}
+                              className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+                            >
+                              <span className="font-medium text-gray-800">{c.nome}</span>{" "}
+                              <span className="text-gray-400">{c.empresa}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {resultadosBusca.produtos.length > 0 && (
+                        <div>
+                          <p className="px-4 pb-1 text-xs font-semibold uppercase text-gray-400">Produtos</p>
+                          {resultadosBusca.produtos.map((p) => (
+                            <button
+                              key={p.id}
+                              onMouseDown={() =>
+                                irPara(`/produtos?busca=${encodeURIComponent(p.codigo_ingafert ?? p.nome)}`)
+                              }
+                              className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+                            >
+                              <span className="font-medium text-gray-800">{p.codigo_ingafert}</span>{" "}
+                              <span className="text-gray-400">{p.nome}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="px-4 py-3 text-sm text-gray-400">
+                      Nenhum resultado para &quot;{buscaGlobal}&quot;
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
-            <button
-              type="button"
-              className="relative rounded-xl border border-gray-100 p-2.5 text-gray-500 transition-colors hover:bg-gray-50"
-            >
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-ingafert-ouro" />
-            </button>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setMostrarNotificacoes((v) => !v)}
+                className="relative rounded-xl border border-gray-100 p-2.5 text-gray-500 transition-colors hover:bg-gray-50"
+              >
+                <Bell className="h-4 w-4" />
+                {naoLidas > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-ingafert-ouro px-1 text-[10px] font-bold text-white">
+                    {naoLidas > 9 ? "9+" : naoLidas}
+                  </span>
+                )}
+              </button>
+
+              {mostrarNotificacoes && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setMostrarNotificacoes(false)} />
+                  <div className="absolute right-0 z-20 mt-2 w-80 rounded-xl border border-gray-100 bg-white shadow-lg">
+                    <div className="flex items-center justify-between border-b border-gray-50 px-4 py-3">
+                      <p className="text-sm font-bold text-gray-700">Notificações</p>
+                      {naoLidas > 0 && (
+                        <button onClick={marcarTodasComoLidas} className="text-xs text-ingafert-verde hover:underline">
+                          Marcar todas como lidas
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notificacoes.length === 0 ? (
+                        <p className="px-4 py-6 text-center text-sm text-gray-400">Nenhuma notificação ainda.</p>
+                      ) : (
+                        notificacoes.map((n) => (
+                          <button
+                            key={n.id}
+                            onClick={() => abrirNotificacao(n)}
+                            className={`block w-full border-b border-gray-50 px-4 py-3 text-left transition-colors last:border-0 hover:bg-gray-50 ${
+                              n.lida ? "" : "bg-ingafert-verde/5"
+                            }`}
+                          >
+                            <p className="text-sm font-medium text-gray-800">{n.titulo}</p>
+                            {n.mensagem && <p className="mt-0.5 text-xs text-gray-500">{n.mensagem}</p>}
+                            <p className="mt-1 text-[11px] text-gray-400">
+                              {new Date(n.created_at).toLocaleString("pt-BR")}
+                            </p>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
         <main className="p-4 md:p-6">{children}</main>

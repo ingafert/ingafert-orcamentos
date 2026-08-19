@@ -1,26 +1,43 @@
 "use server";
-
 import { createServiceClient } from "@/lib/supabase/service";
 import { revalidatePath } from "next/cache";
 
 export async function responderOrcamento(id: string, resposta: "aprovado" | "recusado") {
   const supabase = createServiceClient();
 
+  const { data: orcamento } = await supabase
+    .from("orcamentos")
+    .select("*, clientes(nome)")
+    .eq("id", id)
+    .single();
+
+  if (!orcamento) {
+    revalidatePath(`/orcamento/${id}`);
+    return;
+  }
+
+  const nomeCliente = (orcamento as any).clientes?.nome ?? "Cliente";
+  const numeroFormatado = String(orcamento.numero).padStart(6, "0");
+
   if (resposta === "recusado") {
     await supabase.from("orcamentos").update({ status: "recusado" }).eq("id", id);
+    await supabase.from("notificacoes").insert({
+      tipo: "orcamento_recusado",
+      titulo: `Orçamento #${numeroFormatado} recusado`,
+      mensagem: `${nomeCliente} recusou o orçamento nº ${numeroFormatado}.`,
+      orcamento_id: id,
+    });
     revalidatePath(`/orcamento/${id}`);
     return;
   }
 
   // Aprovado pelo cliente: converte automaticamente em pedido, já baixando o estoque.
-  const { data: orcamento } = await supabase.from("orcamentos").select("*").eq("id", id).single();
-  if (!orcamento || orcamento.status === "convertido") {
+  if (orcamento.status === "convertido") {
     revalidatePath(`/orcamento/${id}`);
     return;
   }
 
   const { data: itens } = await supabase.from("orcamento_itens").select("*").eq("orcamento_id", id);
-
   const { data: pedido, error } = await supabase
     .from("pedidos")
     .insert({
@@ -62,6 +79,13 @@ export async function responderOrcamento(id: string, resposta: "aprovado" | "rec
   }
 
   await supabase.from("orcamentos").update({ status: "convertido" }).eq("id", id);
+
+  await supabase.from("notificacoes").insert({
+    tipo: "orcamento_aprovado",
+    titulo: `Orçamento #${numeroFormatado} aprovado`,
+    mensagem: `${nomeCliente} aprovou o orçamento nº ${numeroFormatado}. Pedido nº ${pedido.numero} criado automaticamente.`,
+    orcamento_id: id,
+  });
 
   revalidatePath(`/orcamento/${id}`);
 }
