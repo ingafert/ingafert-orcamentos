@@ -260,7 +260,7 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
               }`}
             >
               <span
-                className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+                className={`flex h-9 w-9 items-center justify-center rounded-full transition-all duration-150 active:scale-90 ${
                   ativo ? "bg-ingafert-verde/15" : ""
                 }`}
               >
@@ -275,7 +275,7 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
           onClick={() => setMenuAberto(true)}
           className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs font-medium text-gray-500"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full transition-all duration-150 active:scale-90">
             <MoreHorizontal className="h-6 w-6" strokeWidth={2} />
           </span>
           Mais
