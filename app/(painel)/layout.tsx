@@ -234,7 +234,7 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
 
       {/* Barra de navegação inferior - só no celular, sempre ao alcance do polegar */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-gray-100 bg-white/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-gray-200 bg-white pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
       >
         {BOTTOM_NAV.map(({ href, label, icon: Icon }) => {
           const ativo = pathname?.startsWith(href);
@@ -242,11 +242,17 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center gap-1 px-3 py-1 text-[11px] font-medium transition-colors ${
-                ativo ? "text-ingafert-verde" : "text-gray-400"
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
+                ativo ? "font-semibold text-ingafert-verde" : "font-medium text-gray-500"
               }`}
             >
-              <Icon className="h-5 w-5" />
+              <span
+                className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+                  ativo ? "bg-ingafert-verde/15" : ""
+                }`}
+              >
+                <Icon className="h-6 w-6" strokeWidth={ativo ? 2.4 : 2} />
+              </span>
               {label}
             </Link>
           );
@@ -254,9 +260,11 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
         <button
           type="button"
           onClick={() => setMenuAberto(true)}
-          className="flex flex-col items-center gap-1 px-3 py-1 text-[11px] font-medium text-gray-400"
+          className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs font-medium text-gray-500"
         >
-          <MoreHorizontal className="h-5 w-5" />
+          <span className="flex h-9 w-9 items-center justify-center rounded-full">
+            <MoreHorizontal className="h-6 w-6" strokeWidth={2} />
+          </span>
           Mais
         </button>
       </nav>
