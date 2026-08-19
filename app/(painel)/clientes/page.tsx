@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -25,7 +25,17 @@ const CAMPOS_VAZIOS: Omit<Cliente, "id" | "created_at" | "updated_at"> = {
   observacoes: "",
 };
 
+// A página em si só entrega o Suspense boundary exigido pelo Next.js
+// quando algum componente dentro usa useSearchParams().
 export default function ClientesPage() {
+  return (
+    <Suspense fallback={null}>
+      <ClientesPageConteudo />
+    </Suspense>
+  );
+}
+
+function ClientesPageConteudo() {
   const supabase = createClient();
   const searchParams = useSearchParams();
 
