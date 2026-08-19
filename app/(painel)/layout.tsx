@@ -14,6 +14,7 @@ import {
   Boxes,
   Settings,
   MoreHorizontal,
+  ChevronLeft,
   X,
   Bell,
   LogOut,
@@ -46,6 +47,9 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
 
   const paginaAtual =
     NAV.find((item) => pathname?.startsWith(item.href))?.label ?? "Ingafert Orçamentos";
+
+  // Está "dentro" de alguma coisa (detalhe, edição) e não numa das 7 seções principais?
+  const ehSubpagina = !NAV.some((item) => item.href === pathname);
 
   async function handleSair() {
     setSaindo(true);
@@ -169,7 +173,16 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
 
       <div className="flex-1 md:ml-64">
         <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-gray-100 bg-white/80 px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur md:px-6">
-          <div className="min-w-0 flex-1 md:flex-none">
+          <div className="flex min-w-0 flex-1 items-center gap-1 md:flex-none">
+            {ehSubpagina && (
+              <button
+                onClick={() => router.back()}
+                aria-label="Voltar"
+                className="-ml-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-50 md:hidden"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            )}
             <p className="truncate text-sm font-bold text-ingafert-verde-escuro">{paginaAtual}</p>
           </div>
 
