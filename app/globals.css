@@ -22,21 +22,32 @@ body {
 .btn-primary {
   @apply inline-flex items-center justify-center gap-2 rounded-xl bg-ingafert-verde px-5 py-3
     text-sm font-semibold text-white shadow-card transition-all hover:bg-ingafert-verde-escuro
-    hover:shadow-card-hover active:scale-[0.98];
+    hover:shadow-card-hover active:scale-[0.98]
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ingafert-verde/40 focus-visible:ring-offset-2;
 }
 
 .btn-secondary {
   @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ingafert-verde/20 bg-white
-    px-5 py-3 text-sm font-semibold text-ingafert-verde transition-all hover:bg-ingafert-verde/5;
+    px-5 py-3 text-sm font-semibold text-ingafert-verde transition-all hover:bg-ingafert-verde/5
+    active:scale-[0.98]
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ingafert-verde/40 focus-visible:ring-offset-2;
 }
 
 .btn-gold {
   @apply inline-flex items-center justify-center gap-2 rounded-xl bg-ingafert-ouro px-5 py-3
-    text-sm font-semibold text-ingafert-verde-escuro shadow-card transition-all hover:bg-ingafert-ouro-claro;
+    text-sm font-semibold text-ingafert-verde-escuro shadow-card transition-all hover:bg-ingafert-ouro-claro
+    active:scale-[0.98]
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ingafert-ouro/50 focus-visible:ring-offset-2;
 }
 
+/* Card padrão: flutua com sombra, sem borda desenhada por cima */
 .card {
-  @apply rounded-2xl border border-gray-100 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover;
+  @apply rounded-2xl bg-white p-6 shadow-card transition-shadow;
+}
+
+/* Use junto com .card em cartões que levam a algum lugar ao clicar */
+.card-interactive {
+  @apply cursor-pointer hover:shadow-card-hover;
 }
 
 .input {
@@ -71,9 +82,26 @@ body {
 }
 
 .stat-card .valor {
-  @apply text-2xl font-bold text-ingafert-verde-escuro;
+  @apply text-2xl font-bold tracking-tight tabular-nums text-ingafert-verde-escuro;
 }
 
 .stat-card .rotulo {
-  @apply text-xs font-medium text-gray-400;
+  @apply text-xs font-medium uppercase tracking-wide text-gray-400;
+}
+
+/* Aplique em qualquer valor monetário/numérico solto em tabelas para alinhar dígitos */
+.numero {
+  @apply tabular-nums;
+}
+
+/* Respeita a preferência do sistema por menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

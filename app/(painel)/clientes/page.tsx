@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Cliente } from "@/types/database";
 import { Search, Plus, Pencil, Trash2, X, Users } from "lucide-react";
@@ -25,8 +27,10 @@ const CAMPOS_VAZIOS: Omit<Cliente, "id" | "created_at" | "updated_at"> = {
 
 export default function ClientesPage() {
   const supabase = createClient();
+  const searchParams = useSearchParams();
+
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [busca, setBusca] = useState("");
+  const [busca, setBusca] = useState(searchParams.get("busca") ?? "");
   const [carregando, setCarregando] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -42,6 +46,30 @@ export default function ClientesPage() {
   useEffect(() => {
     carregar();
   }, []);
+
+  function abrirEdicao(c: Cliente) {
+    setEditandoId(c.id);
+    setForm(c);
+    setModalAberto(true);
+  }
+
+  // Se veio de /clientes?editar=ID (ex: botão "Editar cliente" na tela de detalhe), abre o modal já preenchido
+  useEffect(() => {
+    const editarId = searchParams.get("editar");
+    if (editarId && clientes.length > 0) {
+      const c = clientes.find((cl) => cl.id === editarId);
+      if (c) abrirEdicao(c);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientes, searchParams]);
+
+  // Se veio de /clientes?novo=1 (ex: comando "Novo cliente" na busca rápida), já abre o modal de cadastro
+  useEffect(() => {
+    if (searchParams.get("novo") === "1") {
+      abrirNovo();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -71,12 +99,6 @@ export default function ClientesPage() {
   function abrirNovo() {
     setEditandoId(null);
     setForm(CAMPOS_VAZIOS);
-    setModalAberto(true);
-  }
-
-  function abrirEdicao(c: Cliente) {
-    setEditandoId(c.id);
-    setForm(c);
     setModalAberto(true);
   }
 
@@ -199,7 +221,11 @@ export default function ClientesPage() {
             {!carregando &&
               filtrados.map((c) => (
                 <tr key={c.id} className="border-t border-gray-50 hover:bg-gray-50/50">
-                  <td className="px-5 py-3 font-medium text-gray-800">{c.nome}</td>
+                  <td className="px-5 py-3 font-medium text-gray-800">
+                    <Link href={`/clientes/${c.id}`} className="hover:text-ingafert-verde hover:underline">
+                      {c.nome}
+                    </Link>
+                  </td>
                   <td className="px-5 py-3 text-gray-500">{c.empresa || "-"}</td>
                   <td className="px-5 py-3 text-gray-500">{c.cpf_cnpj || "-"}</td>
                   <td className="px-5 py-3 text-gray-500">{c.whatsapp || "-"}</td>

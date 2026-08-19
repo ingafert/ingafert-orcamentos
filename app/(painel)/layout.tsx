@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import CommandPalette from "@/components/CommandPalette";
 import {
   LayoutDashboard,
   Users,
@@ -12,9 +13,8 @@ import {
   ShoppingCart,
   Boxes,
   Settings,
-  Menu,
+  MoreHorizontal,
   X,
-  Search,
   Bell,
   LogOut,
 } from "lucide-react";
@@ -27,6 +27,14 @@ const NAV = [
   { href: "/produtos", label: "Produtos", icon: Package },
   { href: "/estoque", label: "Estoque", icon: Boxes },
   { href: "/admin", label: "Admin", icon: Settings },
+];
+
+// Itens de maior uso, sempre ao alcance do polegar na barra inferior (mobile)
+const BOTTOM_NAV = [
+  { href: "/dashboard", label: "Início", icon: LayoutDashboard },
+  { href: "/orcamentos", label: "Orçamentos", icon: FileText },
+  { href: "/clientes", label: "Clientes", icon: Users },
+  { href: "/produtos", label: "Produtos", icon: Package },
 ];
 
 export default function PainelLayout({ children }: { children: React.ReactNode }) {
@@ -44,75 +52,6 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
-  }
-
-  // Busca global no cabeçalho
-  const [buscaGlobal, setBuscaGlobal] = useState("");
-  const [mostrarResultados, setMostrarResultados] = useState(false);
-  const [buscandoGlobal, setBuscandoGlobal] = useState(false);
-  const [resultadosBusca, setResultadosBusca] = useState<{
-    orcamentos: any[];
-    clientes: any[];
-    produtos: any[];
-  }>({ orcamentos: [], clientes: [], produtos: [] });
-
-  useEffect(() => {
-    const termo = buscaGlobal.trim();
-    if (termo.length < 2) {
-      setResultadosBusca({ orcamentos: [], clientes: [], produtos: [] });
-      return;
-    }
-    setBuscandoGlobal(true);
-    const t = setTimeout(async () => {
-      const [clientesRes, produtosRes, orcamentosPorClienteRes] = await Promise.all([
-        supabase
-          .from("clientes")
-          .select("id, nome, empresa")
-          .or(`nome.ilike.%${termo}%,empresa.ilike.%${termo}%`)
-          .limit(5),
-        supabase
-          .from("produtos")
-          .select("id, nome, codigo_ingafert")
-          .or(`nome.ilike.%${termo}%,codigo_ingafert.ilike.%${termo}%`)
-          .limit(5),
-        supabase
-          .from("orcamentos")
-          .select("id, numero, total, clientes!inner(nome)")
-          .ilike("clientes.nome", `%${termo}%`)
-          .limit(5),
-      ]);
-
-      let orcamentosPorNumero: any[] = [];
-      if (/^\d+$/.test(termo)) {
-        const { data } = await supabase
-          .from("orcamentos")
-          .select("id, numero, total, clientes(nome)")
-          .eq("numero", Number(termo))
-          .limit(5);
-        orcamentosPorNumero = data ?? [];
-      }
-
-      const orcamentosCombinados = [...(orcamentosPorClienteRes.data ?? []), ...orcamentosPorNumero].filter(
-        (o, idx, arr) => arr.findIndex((x) => x.id === o.id) === idx
-      );
-
-      setResultadosBusca({
-        clientes: (clientesRes.data as any[]) ?? [],
-        produtos: (produtosRes.data as any[]) ?? [],
-        orcamentos: orcamentosCombinados,
-      });
-      setBuscandoGlobal(false);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [buscaGlobal]);
-
-  const temResultados =
-    resultadosBusca.orcamentos.length + resultadosBusca.clientes.length + resultadosBusca.produtos.length > 0;
-
-  function irPara(destino: string) {
-    router.push(destino);
-    setBuscaGlobal("");
-    setMostrarResultados(false);
   }
 
   // Notificações
@@ -157,7 +96,8 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar - fixa em telas grandes, drawer sobreposto no celular */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-gray-100 bg-white px-4 py-6
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-gray-100 bg-white px-4
+          pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]
           transition-transform duration-200 md:translate-x-0
           ${menuAberto ? "translate-x-0" : "-translate-x-full"}`}
       >
@@ -184,12 +124,15 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
                 key={href}
                 href={href}
                 onClick={() => setMenuAberto(false)}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                   ativo
-                    ? "bg-ingafert-verde text-white shadow-card"
-                    : "text-gray-500 hover:bg-ingafert-verde/5 hover:text-ingafert-verde-escuro"
+                    ? "bg-ingafert-verde/10 text-ingafert-verde-escuro"
+                    : "text-gray-500 hover:bg-gray-50 hover:text-ingafert-verde-escuro"
                 }`}
               >
+                {ativo && (
+                  <span className="absolute -left-4 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-ingafert-verde" />
+                )}
                 <Icon className="h-4 w-4" />
                 {label}
               </Link>
@@ -225,94 +168,13 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
       )}
 
       <div className="flex-1 md:ml-64">
-        <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-gray-100 bg-white/80 px-4 py-4 backdrop-blur md:px-6">
-          <button onClick={() => setMenuAberto(true)} className="text-gray-500 md:hidden">
-            <Menu className="h-6 w-6" />
-          </button>
-
-          <div className="hidden md:block">
-            <p className="text-sm font-bold text-ingafert-verde-escuro">{paginaAtual}</p>
+        <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-gray-100 bg-white/80 px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur md:px-6">
+          <div className="min-w-0 flex-1 md:flex-none">
+            <p className="truncate text-sm font-bold text-ingafert-verde-escuro">{paginaAtual}</p>
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            <div className="relative hidden sm:block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={buscaGlobal}
-                onChange={(e) => setBuscaGlobal(e.target.value)}
-                onFocus={() => setMostrarResultados(true)}
-                onBlur={() => setTimeout(() => setMostrarResultados(false), 150)}
-                placeholder="Buscar orçamento, cliente ou produto"
-                className="input w-64 py-2 pl-9 text-sm"
-              />
-
-              {mostrarResultados && buscaGlobal.trim().length >= 2 && (
-                <div className="absolute right-0 z-20 mt-1 w-80 rounded-xl border border-gray-100 bg-white py-2 shadow-lg">
-                  {buscandoGlobal ? (
-                    <p className="px-4 py-3 text-sm text-gray-400">Buscando...</p>
-                  ) : temResultados ? (
-                    <>
-                      {resultadosBusca.orcamentos.length > 0 && (
-                        <div className="mb-1">
-                          <p className="px-4 pb-1 text-xs font-semibold uppercase text-gray-400">Orçamentos</p>
-                          {resultadosBusca.orcamentos.map((o) => (
-                            <button
-                              key={o.id}
-                              onMouseDown={() => irPara(`/orcamentos/${o.id}`)}
-                              className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
-                            >
-                              <span className="font-medium text-gray-800">
-                                #{String(o.numero).padStart(6, "0")}
-                              </span>{" "}
-                              <span className="text-gray-400">{o.clientes?.nome}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-
-                      {resultadosBusca.clientes.length > 0 && (
-                        <div className="mb-1">
-                          <p className="px-4 pb-1 text-xs font-semibold uppercase text-gray-400">Clientes</p>
-                          {resultadosBusca.clientes.map((c) => (
-                            <button
-                              key={c.id}
-                              onMouseDown={() => irPara(`/clientes?busca=${encodeURIComponent(c.nome)}`)}
-                              className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
-                            >
-                              <span className="font-medium text-gray-800">{c.nome}</span>{" "}
-                              <span className="text-gray-400">{c.empresa}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-
-                      {resultadosBusca.produtos.length > 0 && (
-                        <div>
-                          <p className="px-4 pb-1 text-xs font-semibold uppercase text-gray-400">Produtos</p>
-                          {resultadosBusca.produtos.map((p) => (
-                            <button
-                              key={p.id}
-                              onMouseDown={() =>
-                                irPara(`/produtos?busca=${encodeURIComponent(p.codigo_ingafert ?? p.nome)}`)
-                              }
-                              className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
-                            >
-                              <span className="font-medium text-gray-800">{p.codigo_ingafert}</span>{" "}
-                              <span className="text-gray-400">{p.nome}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <p className="px-4 py-3 text-sm text-gray-400">
-                      Nenhum resultado para &quot;{buscaGlobal}&quot;
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+            <CommandPalette />
 
             <div className="relative">
               <button
@@ -367,8 +229,37 @@ export default function PainelLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
         </header>
-        <main className="p-4 md:p-6">{children}</main>
+        <main className="p-4 pb-24 md:p-6 md:pb-6">{children}</main>
       </div>
+
+      {/* Barra de navegação inferior - só no celular, sempre ao alcance do polegar */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-gray-100 bg-white/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur md:hidden"
+      >
+        {BOTTOM_NAV.map(({ href, label, icon: Icon }) => {
+          const ativo = pathname?.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex flex-col items-center gap-1 px-3 py-1 text-[11px] font-medium transition-colors ${
+                ativo ? "text-ingafert-verde" : "text-gray-400"
+              }`}
+            >
+              <Icon className="h-5 w-5" />
+              {label}
+            </Link>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setMenuAberto(true)}
+          className="flex flex-col items-center gap-1 px-3 py-1 text-[11px] font-medium text-gray-400"
+        >
+          <MoreHorizontal className="h-5 w-5" />
+          Mais
+        </button>
+      </nav>
     </div>
   );
 }
